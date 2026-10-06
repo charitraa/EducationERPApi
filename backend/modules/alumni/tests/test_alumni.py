@@ -232,6 +232,9 @@ class MentoringTests(AlumniTestCase):
 
     def test_a_mentor_without_an_account_cannot_be_asked(self):
         AlumniProfile.objects.filter(pk=self.hari_profile.pk).update(is_mentor=True, user=None)
+        # Not offered in the list either.
+        mentors = self.get(self.gita_user, "profiles/mentors/").data["results"]
+        self.assertEqual([m["full_name"] for m in mentors], ["Sita Thapa"])
         self.assertEqual(self.post(self.gita_user, "mentorships/", {"mentor": self.hari_profile.pk, "topic": "x"})
                          .data["error"]["code"], "mentor_unreachable")
 

@@ -138,6 +138,20 @@ class ApiRateLimitTests(APITestCaseBase):
         self.assertEqual(statuses[:2], [401, 401])
         self.assertEqual(statuses[-1], 429)
 
+    def test_reading_public_forms_is_not_held_to_the_submission_limit(self):
+        """A family reloading the admission page shouldn't use up the few submissions
+        and token lookups an address gets; those stay strict."""
+        with mock.patch.dict(ScopedRateThrottle.THROTTLE_RATES, {"public_applications": "2/min",
+                                                                 "public_read": "100/min"}):
+            reads = {self.client.get(url).status_code
+                     for url in ["/api/v1/public/organizations/rl-college/application-types/",
+                                 "/api/v1/public/organizations/rl-college/careers/vacancies/"] * 3}
+            lookups = [self.client.post("/api/v1/public/organizations/rl-college/applications/status/",
+                                        {"number": "APP-1", "token": "x"}).status_code for _ in range(3)]
+        self.assertEqual(reads, {200})
+        self.assertEqual(lookups[:2], [404, 404])
+        self.assertEqual(lookups[-1], 429)
+
     def test_health_probes_are_never_limited(self):
         with mock.patch.dict(AnonRateThrottle.THROTTLE_RATES, {"anon": "1/min"}):
             statuses = {self.client.get(url).status_code for url in ["/health/", "/ready/"] * 3}

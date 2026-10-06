@@ -385,11 +385,12 @@ class AssetUpdateSerializer(serializers.ModelSerializer):
 
 class AssetAssignmentSerializer(serializers.ModelSerializer):
     asset_tag = serializers.CharField(source="asset.tag", read_only=True)
+    asset_name = serializers.CharField(source="asset.item.name", read_only=True)
     holder_name = serializers.CharField(read_only=True)
 
     class Meta:
         model = AssetAssignment
-        fields = ["id", "organization", "asset", "asset_tag", "staff", "student", "room", "department",
+        fields = ["id", "organization", "asset", "asset_tag", "asset_name", "staff", "student", "room", "department",
                   "holder_name", "assigned_on", "returned_on", "returned_condition", "note", "assigned_by",
                   "created_at"]
         read_only_fields = fields

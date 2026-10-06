@@ -1,5 +1,6 @@
 from django.db.models import Q
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from django.utils import timezone
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import MethodNotAllowed, NotFound
@@ -12,7 +13,7 @@ from core.common.permissions import IsSameOrganization
 from core.permissions.selectors import campus_ids_with_permission
 
 from . import selectors, services
-from .models import Author, Book, Category, Copy, Fine, Issue, Member, Publisher, Reservation, Shelf
+from .models import Author, Book, Category, Copy, Fine, Issue, IssueStatus, Member, Publisher, Reservation, Shelf
 from .serializers import (
     AuthorSerializer,
     BookSerializer,
@@ -166,6 +167,8 @@ class CopyViewSet(CampusScopedViewSet):
     audit_module = "library"
     service_audits_create = True
     filterset_fields = ["book", "campus", "shelf", "status"]
+    # The desk finds a copy by the accession number on its label.
+    search_fields = ["accession_number", "book__title", "book__isbn"]
     required_permissions = {"create": [MANAGE], "update": [MANAGE], "partial_update": [MANAGE],
                             "destroy": [MANAGE], "withdraw": [MANAGE]}
 
@@ -211,6 +214,8 @@ class MemberViewSet(CampusScopedViewSet):
     audit_module = "library"
     service_audits_create = True
     filterset_fields = ["campus", "membership_type", "is_active"]
+    search_fields = ["member_number", "student__first_name", "student__last_name", "student__student_number",
+                     "staff__first_name", "staff__last_name", "staff__employee_number"]
     required_permissions = {"list": [MANAGE], "retrieve": [MANAGE], "create": [MANAGE], "update": [MANAGE],
                             "partial_update": [MANAGE], "deactivate": [MANAGE]}
 
@@ -258,7 +263,9 @@ def _campus_scoped_own(qs, request, campus_field, own_q):
 
 
 @extend_schema_view(
-    list=extend_schema(tags=[TAG]), retrieve=extend_schema(tags=[TAG]),
+    list=extend_schema(tags=[TAG], parameters=[
+        OpenApiParameter("overdue", bool, description="Only loans still out past their due time.")]),
+    retrieve=extend_schema(tags=[TAG]),
     create=extend_schema(tags=[TAG], summary="Issue a copy", request=IssueBookSerializer,
                          responses={201: IssueSerializer}),
 )
@@ -269,6 +276,7 @@ class IssueViewSet(OrganizationScopedViewSet):
     audit_module = "library"
     service_audits_create = True
     filterset_fields = ["copy", "member", "status"]
+    search_fields = ["copy__accession_number", "copy__book__title", "member__member_number"]
     required_permissions = {"create": [CIRCULATE], "return_copy": [CIRCULATE]}
 
     def get_permissions(self):
@@ -278,6 +286,8 @@ class IssueViewSet(OrganizationScopedViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        if self.request.query_params.get("overdue") in ("1", "true", "True"):
+            qs = qs.filter(status=IssueStatus.ISSUED, due_at__lt=timezone.now())
         return _campus_scoped_own(qs, self.request, "copy__campus", lambda u: Q(member__student__user=u) | Q(member__staff__user=u))
 
     def create(self, request, *args, **kwargs):

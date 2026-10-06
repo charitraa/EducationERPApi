@@ -376,7 +376,7 @@ class AssetViewSet(CampusScopedViewSet):
 @extend_schema_view(**READ_DOCS)
 class AssetAssignmentViewSet(ReadOnlyCampusViewSet):
     campus_field = "asset__campus"
-    queryset = AssetAssignment.objects.select_related("asset", "staff", "student", "room", "department")
+    queryset = AssetAssignment.objects.select_related("asset__item", "staff", "student", "room", "department")
     serializer_class = AssetAssignmentSerializer
     filterset_fields = ["asset", "staff", "student", "room", "department"]
 

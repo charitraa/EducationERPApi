@@ -25,7 +25,7 @@ PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 REST_FRAMEWORK = {  # noqa: F405
     **BASE_REST_FRAMEWORK,
     "DEFAULT_THROTTLE_RATES": {"login": "10000/min", "anon": "10000/min", "user": "10000/min",
-                               "device": "10000/min", "public_applications": "10000/min",
+                               "device": "10000/min", "public_applications": "10000/min", "public_read": "10000/min",
                                "uploads": "10000/min", "api_key": "10000/min", "signup": "10000/min",
                                "signup_check": "10000/min", "password_reset": "10000/min"},
 }

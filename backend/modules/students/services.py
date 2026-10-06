@@ -201,7 +201,7 @@ def _check_capacity(section, day, allow_over_capacity, exclude_student=None) -> 
     if placed >= section.capacity:
         raise ConflictError(
             f"{section.display_name} is full ({placed} of {section.capacity}) on {day}. "
-            "Send allow_over_capacity to place the student anyway.",
+            "Placing more students needs a deliberate override.",
             code="over_capacity",
         )
 

@@ -189,6 +189,16 @@ class GateQRTests(StaffTestCase):
 
         self.assertError(self.client.post(f"{API}/punches/check-in/", {"token": token}), 403, "not_staff")
 
+    def test_a_gate_code_scanned_from_afar_names_the_campus(self):
+        token = self.code(latitude=27.6588, longitude=85.3247, radius=100)
+        self.login(self.hari)
+
+        response = self.client.post(f"{API}/punches/check-in/", {"token": token, "latitude": 27.7172,
+                                                                  "longitude": 85.3240})
+
+        self.assertError(response, 403, "too_far")
+        self.assertIn("too far from the campus", str(response.data))
+
     def test_a_session_code_is_not_a_gate_code(self):
         self.login(self.hari)
         session = self.open_lesson(self.physics_a).data["id"]

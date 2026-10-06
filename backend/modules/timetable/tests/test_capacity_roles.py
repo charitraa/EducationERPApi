@@ -31,6 +31,7 @@ class RoomCapacityTests(TimetableTestCase):
         self.assertEqual(refused.status_code, 409)
         self.assertEqual(refused.data["error"]["code"], "room_too_small")
         self.assertIn("5 students", refused.data["error"]["message"])
+        self.assertNotIn("allow_over_capacity", refused.data["error"]["message"])
         self.assertEqual(allowed.status_code, 201, allowed.data)
 
     def test_an_elective_counts_only_the_students_who_take_it(self):

@@ -420,12 +420,16 @@ class PublicView(APIView):
 
 
 class PublicVacanciesView(PublicView):
+    throttle_scope = "public_read"
+
     @extend_schema(tags=[PUBLIC_TAG], summary="Open vacancies", responses={200: PublicVacancySerializer(many=True)})
     def get(self, request, code):
         return Response(PublicVacancySerializer(self.vacancies(self.organization(code)), many=True).data)
 
 
 class PublicVacancyView(PublicView):
+    throttle_scope = "public_read"
+
     @extend_schema(tags=[PUBLIC_TAG], summary="One open vacancy", responses={200: PublicVacancySerializer})
     def get(self, request, code, pk):
         vacancy = self.vacancies(self.organization(code)).filter(pk=pk).first()

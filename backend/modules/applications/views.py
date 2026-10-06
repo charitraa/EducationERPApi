@@ -376,6 +376,9 @@ class PublicView(APIView):
 
 
 class PublicTypesView(PublicView):
+    # Loading the form is a page view, not a submission or a token lookup.
+    throttle_scope = "public_read"
+
     @extend_schema(tags=[PUBLIC_TAG], summary="Forms open to the public",
                    responses={200: AvailableTypeSerializer(many=True)})
     def get(self, request, code):

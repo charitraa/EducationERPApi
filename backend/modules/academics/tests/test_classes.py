@@ -129,6 +129,15 @@ class SectionTests(ClassesTestCase):
 
         self.assertEqual(self.client.delete(f"{API}/sections/{section.pk}/").status_code, 409)
 
+    def test_search_by_the_name_shown(self):
+        create_section(self.lalitpur, self.program, self.year, level=11, name="A")
+        create_section(self.lalitpur, self.program, self.year, level=12, name="A")
+
+        found = self.client.get(f"{API}/sections/", {"search": "Grade 11 A"})
+
+        self.assertEqual(found.status_code, 200)
+        self.assertEqual([s["display_name"] for s in found.data["results"]], ["Grade 11 A"])
+
 
 class BatchTests(ClassesTestCase):
     def test_create_a_batch_and_attach_a_section(self):

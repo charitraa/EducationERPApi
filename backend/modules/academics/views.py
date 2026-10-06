@@ -242,7 +242,8 @@ class SectionViewSet(CampusAcademicsViewSet):
     )
     serializer_class = SectionSerializer
     filterset_fields = ["academic_year", "campus", "program", "level", "batch", "class_teacher"]
-    search_fields = ["name", "program__name"]
+    # Level type and number too, so "Grade 11 A" (the name shown) finds the class.
+    search_fields = ["name", "program__name", "program__level_type", "level"]
     ordering_fields = ["level", "name"]
     ordering = ["program__name", "level", "name", "pk"]
     required_permissions = _perms(CLASSES, students=[VIEW, "students.view"],

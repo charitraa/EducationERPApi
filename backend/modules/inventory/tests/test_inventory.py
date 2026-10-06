@@ -476,7 +476,9 @@ class AssetTests(InventoryTestCase):
         self.assertEqual(back.status_code, 200, back.data)
         got = self.client.get(f"{API}/assets/{asset['id']}/").data
         self.assertEqual((got["status"], got["condition"], got["holder"]), ("in_store", "fair", None))
-        self.assertEqual(self.client.get(f"{API}/asset-assignments/?asset={asset['id']}").data["count"], 1)
+        history = self.client.get(f"{API}/asset-assignments/?asset={asset['id']}").data
+        self.assertEqual(history["count"], 1)
+        self.assertEqual(history["results"][0]["asset_name"], asset["item_name"])     # what it is, not just the tag
 
     def test_an_assigned_asset_cannot_be_assigned_again(self):
         asset = self.make_asset()

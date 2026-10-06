@@ -259,6 +259,8 @@ REST_FRAMEWORK = {
         "device": config("THROTTLE_DEVICE", default="120/min"),
         # Public application forms (no account): per address.
         "public_applications": config("THROTTLE_PUBLIC_APPLICATIONS", default="20/hour"),
+        # Reading public forms and vacancies: a page view, so far looser than submitting.
+        "public_read": config("THROTTLE_PUBLIC_READ", default="300/hour"),
         # File uploads, per user.
         "uploads": config("THROTTLE_UPLOADS", default="30/hour"),
         # An API key without a rate of its own.

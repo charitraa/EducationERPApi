@@ -126,6 +126,8 @@ class CapacityTests(APITestCaseBase):
 
         self.assertEqual(refused.status_code, 409)
         self.assertEqual(refused.data["error"]["code"], "over_capacity")
+        # Shown to office staff as-is, so no API field names.
+        self.assertNotIn("allow_over_capacity", refused.data["error"]["message"])
         self.assertEqual(allowed.status_code, 200, allowed.data)
 
     def test_promotion_into_a_full_class(self):

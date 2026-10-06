@@ -202,7 +202,8 @@ class AlumniProfileViewSet(CampusScopedViewSet):
         if (student_for_user(user) is None and services.profile_for_user(user) is None
                 and not services.holds_anywhere(user, VIEW)):
             raise PermissionDenied("Mentors are listed for students and alumni.")
-        qs = (AlumniProfile.objects.filter(organization_id=user.organization_id, is_mentor=True)
+        # Without an account nobody could answer a request, so they aren't offered.
+        qs = (AlumniProfile.objects.filter(organization_id=user.organization_id, is_mentor=True, user__isnull=False)
               .annotate(active_mentees=Count("mentees", filter=Q(mentees__status=MentorshipStatus.ACCEPTED,
                                                                  mentees__deleted_at__isnull=True)))
               .order_by(*AlumniProfile._meta.ordering).prefetch_related("employments"))

@@ -68,7 +68,8 @@ def check_location(token: Token, latitude, longitude) -> None:
     if latitude is None or longitude is None:
         raise PermissionDeniedError("Turn on location to scan this code.", code="location_required")
     if distance_m(token.latitude, token.longitude, latitude, longitude) > token.radius:
-        raise PermissionDeniedError("You're too far from the class to scan this code.",
+        place = "class" if token.kind == "session" else "campus"
+        raise PermissionDeniedError(f"You're too far from the {place} to scan this code.",
                                     code="too_far")
 
 

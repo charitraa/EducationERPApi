@@ -265,7 +265,7 @@ class TimetableEntryViewSet(TimetableViewSet):
         if students > room.capacity:
             raise ConflictError(
                 f"{room.name} seats {room.capacity}; this class has {students} students. "
-                "Send allow_over_capacity to book it anyway.",
+                "Booking it anyway needs a deliberate override.",
                 code="room_too_small",
             )
 

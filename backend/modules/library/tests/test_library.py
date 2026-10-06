@@ -432,3 +432,37 @@ class DeleteInUseTests(LibraryTestCase):
         self.login(create_superuser())
         r = self.client.post(f"{API}/library/fines/", {"organization": self.org.pk})
         self.assertEqual(r.status_code, 405)
+
+
+class DeskSearchTests(LibraryTestCase):
+    """The desk finds a copy by its label, and a member by number or name."""
+
+    def setUp(self):
+        super().setUp()
+        self.login(self.office)
+
+    def test_find_a_copy_by_accession_number(self):
+        Copy.objects.create(organization=self.org, book=self.book, campus=self.campus, accession_number="ACC-000002")
+        r = self.client.get(f"{API}/library/copies/", {"search": "ACC-000002"})
+        self.assertEqual([c["accession_number"] for c in r.data["results"]], ["ACC-000002"])
+
+    def test_find_a_member_by_name_or_number(self):
+        by_name = self.client.get(f"{API}/library/members/", {"search": "Sita"})
+        by_number = self.client.get(f"{API}/library/members/", {"search": self.ram_member.member_number})
+        self.assertEqual([m["id"] for m in by_name.data["results"]], [self.sita_member.pk])
+        self.assertEqual([m["id"] for m in by_number.data["results"]], [self.ram_member.pk])
+
+    def test_find_a_loan_by_accession_number(self):
+        services.issue_book(copy=self.copy, member=self.ram_member)
+        r = self.client.get(f"{API}/library/issues/", {"search": "ACC-000001"})
+        self.assertEqual(r.data["count"], 1)
+
+    def test_list_only_overdue_loans(self):
+        late = services.issue_book(copy=self.copy, member=self.ram_member)
+        late.due_at = timezone.now() - timedelta(days=2)
+        late.save(update_fields=["due_at"])
+        on_time = Copy.objects.create(organization=self.org, book=self.book, campus=self.campus,
+                                      accession_number="ACC-000002")
+        services.issue_book(copy=on_time, member=self.sita_member)
+        r = self.client.get(f"{API}/library/issues/", {"overdue": "true"})
+        self.assertEqual([i["id"] for i in r.data["results"]], [late.pk])
