@@ -37,10 +37,11 @@ def student_statement(student, start: Date | None = None, end: Date | None = Non
     }
 
 
-def outstanding(campus_ids=None, program=None, section=None, as_of: Date | None = None) -> dict:
-    """Overdue invoices: who owes what, and for how long."""
+def outstanding(organization_id, campus_ids=None, program=None, section=None, as_of: Date | None = None) -> dict:
+    """Overdue invoices: who owes what, and for how long. ``campus_ids`` None
+    means every campus *of this organization*, never every tenant's."""
     as_of = as_of or timezone.localdate()
-    invoices = (Invoice.objects.filter(status=InvoiceStatus.ISSUED, due_date__lt=as_of)
+    invoices = (Invoice.objects.filter(organization_id=organization_id, status=InvoiceStatus.ISSUED, due_date__lt=as_of)
                .exclude(paid_amount__gte=F("total"))
                .select_related("student", "enrollment__section__program"))
     if campus_ids is not None:

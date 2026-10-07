@@ -94,7 +94,7 @@ REST_FRAMEWORK = {
     ),
     # Session auth makes the browsable API and /admin/ usable while developing.
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "core.authentication.jwt.OrganizationJWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ),
 }

@@ -108,6 +108,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # Each request starts on the default zone; login switches to the school's.
+    "core.common.middleware.OrganizationTimezoneMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "core.audit.middleware.AuditContextMiddleware",
@@ -208,7 +210,8 @@ CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="", cast=Csv())
 # --------------------------------------------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        # simplejwt, plus the organization's time zone for the request.
+        "core.authentication.jwt.OrganizationJWTAuthentication",
         # Programs: "Authorization: Api-Key erp_..." (core/api_keys).
         "core.api_keys.authentication.ApiKeyAuthentication",
     ),

@@ -2,6 +2,10 @@
 from datetime import timedelta
 from decimal import Decimal as D
 
+from tests.factories import create_campus, create_organization, user_with_system_role
+
+from modules.finance.models import Invoice
+
 from .base import API, TODAY, FinanceTestCase
 
 REPORTS = f"{API}/invoices/reports"
@@ -60,6 +64,33 @@ class OutstandingTests(FinanceTestCase):
         self.make_overdue(self.gita, 5)
         r = self.client.get(f"{REPORTS}/outstanding/", {"section": self.section_a.pk})
         self.assertEqual([i["student_name"] for i in r.data["invoices"]], ["Ram Student"])
+
+
+class OutstandingTenancyTests(FinanceTestCase):
+    """The report is one school's: an org-wide role (no campus filter) must
+    still never see another organization's invoices."""
+
+    make_overdue = OutstandingTests.make_overdue
+
+    def setUp(self):
+        super().setUp()
+        self.bill_term()
+        self.other_org = create_organization(code="other-school")
+        self.other_campus = create_campus(self.other_org, code="elsewhere")
+
+    def test_another_schools_overdue_invoice_is_not_listed(self):
+        self.make_overdue(self.ram, 5)
+        theirs = self.make_overdue(self.gita, 9)
+        Invoice.objects.filter(pk=theirs.pk).update(organization=self.other_org, campus=self.other_campus)
+        self.login(self.principal)
+        r = self.client.get(f"{REPORTS}/outstanding/")
+        self.assertEqual([i["student_name"] for i in r.data["invoices"]], ["Ram Student"])
+
+    def test_another_schools_class_is_404(self):
+        self.make_overdue(self.ram, 5)
+        self.login(user_with_system_role(self.other_org, "org-admin", email="admin@other.test"))
+        r = self.client.get(f"{REPORTS}/outstanding/", {"section": self.section_a.pk})
+        self.assertEqual(r.status_code, 404)
 
 
 class CollectionTests(FinanceTestCase):

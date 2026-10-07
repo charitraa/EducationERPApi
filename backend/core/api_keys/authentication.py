@@ -15,6 +15,7 @@ from rest_framework.authentication import BaseAuthentication
 from rest_framework.permissions import SAFE_METHODS
 
 from core.audit.middleware import get_client_ip
+from core.common.timezones import activate_for
 
 from . import keys
 from .models import ApiKey
@@ -66,6 +67,7 @@ class ApiKeyAuthentication(BaseAuthentication):
 
         if key.last_used_at is None or now - key.last_used_at >= TOUCH_EVERY or key.last_used_ip != ip:
             ApiKey.objects.filter(pk=key.pk).update(last_used_at=now, last_used_ip=ip)
+        activate_for(key.user)
         return key.user, key
 
     def authenticate_header(self, request):

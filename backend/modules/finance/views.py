@@ -317,11 +317,14 @@ class FinanceReportViewSet(CampusScopedMixin, OrganizationScopedMixin, viewsets.
     def outstanding(self, request):
         from modules.academics.models import Program, Section
 
-        program = Program.objects.filter(pk=_id(request, "program", required=False)).first() \
+        org = request.user.organization_id
+        program = Program.objects.filter(organization_id=org, pk=_id(request, "program", required=False)).first() \
             if request.query_params.get("program") else None
-        section = Section.objects.filter(pk=_id(request, "section", required=False)).first() \
+        section = Section.objects.filter(organization_id=org, pk=_id(request, "section", required=False)).first() \
             if request.query_params.get("section") else None
-        return Response(selectors.outstanding(self._campus_ids(), program=program, section=section))
+        if (request.query_params.get("program") and program is None) or (request.query_params.get("section") and section is None):
+            raise NotFound("No such program or class.")
+        return Response(selectors.outstanding(org, self._campus_ids(), program=program, section=section))
 
     @extend_schema(tags=[TAG], summary="Payments received in a span, by method (a day sheet)",
                    parameters=[OpenApiParameter("from", str), OpenApiParameter("to", str)], responses={200: None})
