@@ -79,3 +79,36 @@ class SchemaTests(APITestCaseBase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"openapi", response.content[:200].lower())
+
+
+class StableOrderingTests(APITestCaseBase):
+    """``?ordering=`` on a column with ties keeps the default order after it."""
+
+    def setUp(self):
+        from tests.factories import create_campus, create_student
+
+        self.org = create_organization(code="kmc")
+        campus = create_campus(self.org)
+        # Created out of order so the primary key can't pass for the tie-break.
+        for number, last in (("S-1", "Thapa"), ("S-2", "Basnet"), ("S-3", "Karki")):
+            create_student(campus, student_number=number, first_name="Aakriti", last_name=last)
+        self.authenticate(user_with_permissions(self.org, ["students.view"]))
+
+    def names(self, query):
+        response = self.client.get(f"/api/v1/students/?{query}")
+        self.assertEqual(response.status_code, 200, response.data)
+        return [s["last_name"] for s in response.data["results"]]
+
+    def test_ties_fall_back_to_the_default_order(self):
+        self.assertEqual(self.names("ordering=first_name"), ["Basnet", "Karki", "Thapa"])
+
+    def test_pages_neither_repeat_nor_skip_rows(self):
+        pages = [self.names(f"ordering=first_name&page_size=1&page={n}") for n in (1, 2, 3)]
+
+        self.assertEqual(sum(pages, []), ["Basnet", "Karki", "Thapa"])
+
+    def test_descending_keeps_the_tie_break_ascending(self):
+        self.assertEqual(self.names("ordering=-first_name"), ["Basnet", "Karki", "Thapa"])
+
+    def test_a_field_the_client_names_is_not_repeated(self):
+        self.assertEqual(self.names("ordering=-last_name"), ["Thapa", "Karki", "Basnet"])
